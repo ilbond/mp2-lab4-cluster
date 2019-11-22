@@ -1,21 +1,135 @@
-﻿// cluster.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
-//
-
 #include "pch.h"
-#include <iostream>
+#include "Cluster.h"
 
-int main()
+
+Cluster::Cluster()
 {
-    std::cout << "Hello World!\n"; 
+	srand(time(0));
+	nProc = 4 + rand() % 60;
+	proc.resize(nProc);
+	sumcap = 0;
 }
 
-// Запуск программы: CTRL+F5 или меню "Отладка" > "Запуск без отладки"
-// Отладка программы: F5 или меню "Отладка" > "Запустить отладку"
+bool Cluster::ValidTask(Task t){
+	if (t.getProc() > nProc) {
+		return 0;
+	}
+	for (int i = 0; i < nProc; i++) {
+		if (proc[i].GetallCores() < t.getCores())
+			return 0;
+	}
+	return 1;
+}
 
-// Советы по началу работы 
-//   1. В окне обозревателя решений можно добавлять файлы и управлять ими.
-//   2. В окне Team Explorer можно подключиться к системе управления версиями.
-//   3. В окне "Выходные данные" можно просматривать выходные данные сборки и другие сообщения.
-//   4. В окне "Список ошибок" можно просматривать ошибки.
-//   5. Последовательно выберите пункты меню "Проект" > "Добавить новый элемент", чтобы создать файлы кода, или "Проект" > "Добавить существующий элемент", чтобы добавить в проект существующие файлы кода.
-//   6. Чтобы снова открыть этот проект позже, выберите пункты меню "Файл" > "Открыть" > "Проект" и выберите SLN-файл.
+bool Cluster::CanPutTask() {
+	int count = 0;
+	for (int i = 0; i < nProc; i++) {
+		if (proc[i].CanAddTaskInProc(q.GetFirst())) {
+			count++;
+		}
+	}
+	if (count >= q.GetFirst().getProc()) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+void Cluster::StartCluster() {
+	srand(time(0));
+	double tmp = 1;
+	while (tmp > 0.2)
+	{
+		Task t;
+		q.push(t);
+		tmp = 0.01 * (1 + rand() % 100);
+	}
+
+}
+
+void Cluster::TaskIn() {
+	StartCluster();
+	while (!(q.isEmpty())) {
+		if (!(CanPutTask())) {
+			if (!(ValidTask(q.GetFirst())))
+				invalid.push_back(q.pop());
+			else break;
+			return;
+		}
+		int count = 0;
+		for (int i = 0; i < nProc; i++) {
+			if (proc[i].CanAddTaskInProc(q.GetFirst())) {
+				count++;
+				proc[i].AddTask(q.GetFirst());
+				q.GetFirst().numProc.push_back(i);
+			}
+			if (count == q.GetFirst().getProc()) {
+				active.push_back(q.pop());
+				break;
+			}
+		}
+	}
+}
+
+void Cluster::NextTact() {
+	for (int i = 0; i < active.size(); i++)
+	{
+		active[i].TaskTact();
+		if (active[i].isDone()) {
+			for (int j = 0; j < active[i].numProc.size(); j++) {
+				proc[active[i].numProc[j]].FinishTask(active[i]);
+			}
+			finished.push_back(active[i]);
+			active.erase(active.begin() + i);
+		}
+	}
+	sumcap += Capacity();
+	Tact++;
+}
+
+double Cluster::Capacity() {
+	double sum1 = 0, sum2 = 0, res;
+	for (int i = 0; i < nProc; i++) {
+		sum1 += (proc[i].GetallCores() - proc[i].GetfreeCores());
+		sum2 += proc[i].GetallCores();
+	}
+	res = (sum1 / sum2) * 100;
+	return res;
+}
+
+void Cluster::PrintProcess() {
+	system("cls");
+	setlocale(LC_ALL, "Russian");
+	cout << "����� �����: " << Tact << endl;
+	cout << endl;
+	cout << "���-�� ����� �� �����������:" << endl;
+	for (int i = 0; i < nProc; i++)
+	{
+		cout << i + 1 << ": " << proc[i].GetnTasks() << " �����" << endl;
+		cout << "K��-�� ���� -  " << proc[i].GetallCores() << ", ���-�� ��������� - " << proc[i].GetfreeCores() << endl;
+	}
+	cout << endl;
+	cout << "����� ����� � �������: " << q.GetSize() << endl;
+	cout << "����� ������������� �����: " << active.size() << endl;
+	cout << "����� ����������� �����: " << finished.size() << endl;
+	cout << "����� ������������� �����: " << invalid.size() << endl;
+	cout << endl;
+	double average = this->Capacity();
+	cout << "3������������ ��������: " << average << "%" << endl;
+	cout << endl;
+	Sleep(SpeedTact);
+}
+
+void Cluster::Work() {
+	for (int i = 0; i < endTact; i++) {
+		TaskIn();
+		NextTact();
+		PrintProcess();
+	}
+	cout << "\tC������ ������������� �� �� �����:" << sumcap / endTact << "%" << endl;
+}
+
+Cluster::~Cluster()
+{
+}
