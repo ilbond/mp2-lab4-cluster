@@ -1,0 +1,5 @@
+C:/Users/iailil/source/repos/mp2-lab4-cluster/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/iailil/source/repos/mp2-lab4-cluster/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/iailil/source/repos/mp2-lab4-cluster/build/cluster/CMakeFiles/cluster.dir
+C:/Users/iailil/source/repos/mp2-lab4-cluster/build/ClusterTest/CMakeFiles/ClusterTest.dir
+C:/Users/iailil/source/repos/mp2-lab4-cluster/build/gtest/CMakeFiles/gtest.dir
